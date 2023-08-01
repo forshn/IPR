@@ -1,0 +1,30 @@
+# Используем официальный образ Linux для Node.js в качестве базового образа
+FROM node:14
+
+# Устанавливаем Java 1.8
+RUN apt-get update && apt-get install -y openjdk-8-jdk
+
+# Устанавливаем PostgreSQL
+RUN apt-get install -y postgresql
+
+# Копируем файлы исходного кода Node.js в контейнер
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+# Устанавливаем переменные окружения для PostgreSQL
+ENV POSTGRES_HOST localhost
+ENV POSTGRES_PORT 5432
+ENV POSTGRES_USER forsh
+ENV POSTGRES_PASSWORD forsh
+ENV POSTGRES_DB forshDb
+
+# Открываем порт для подключения к Node.js приложению
+EXPOSE 3000
+
+# Запускаем скрипт для создания базы данных если такой есть
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Запускаем Node.js приложение
+CMD ["npm", "start"]

@@ -1,0 +1,31 @@
+# Среда выполнения Java
+FROM amazoncorretto:17-0-6s as build
+
+# Информация о владельце
+LABEL maintainer = "Forsh Nikolay <forsh_nikolay@mail.ru>"
+
+# файл джарник приложения, описанный в помнике
+ARG JAR_FILE
+
+#Добавляем джарник в контейнер
+COPY ${JAR_FILE} app.jar
+
+# Распаковка джарника в файловую систему образа
+RUN mkdir -p target/dependency && (cd target/dependency; jar -xf /app.jar)
+
+# Добавляем новый образ, содержащий несколько слоёв приложения
+FROM amazoncorretto:17
+
+# Добавляем том, который ссылается на каталог /tmp
+VOLUME /tmp
+
+# Копируем распакованное приложение в новый контейнер
+ARG DEPENDENCY=/target/dependency
+COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
+COPY --from=build ${DEPENDENCY}/META-INF /app/MEGA-INF
+COPY --from=build ${DEPENDENCY}/BOOD-INF/classes /app
+
+# Запустить приложение
+ENTRYPOINT ["java", "-cp", "app:app/lib/*", "ru.forsh.transactionservice.TransactionServiceApplication"]
+
+
